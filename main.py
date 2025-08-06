@@ -53,7 +53,7 @@ def main():
     updater.start_webhook(listen="0.0.0.0",
                           port=PORT,
                           url_path=TELEGRAM_TOKEN,
-                          webhook_url=f"https://YOUR_RAILWAY_APP_URL.up.railway.app/{TELEGRAM_TOKEN}")
+                          webhook_url=f"https://https://web-production-056b2.up.railway.app//{TELEGRAM_TOKEN}")
 
     print("Bot has started in webhook mode.")
     updater.idle()
