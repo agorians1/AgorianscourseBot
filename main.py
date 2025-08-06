@@ -1,13 +1,12 @@
-# --- AGORATUBE TELEGRAM BOT ---
+# --- AGORATUBE TELEGRAM BOT (FINAL VERSION) ---
 import os
 import telegram
 from telegram.ext import Updater, CommandHandler
 
 # --- CONFIGURATION ---
-# We will get the token from Railway's secret variables
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 
-# This is the message the bot will send.
+# This is the message the bot will send with your payment details.
 WELCOME_MESSAGE = """
 Hello! Welcome to the AgoraTube AI Website Course.
 
@@ -18,11 +17,11 @@ To get instant access, please follow these simple payment steps:
 **Payment Options:**
 
 **1. CBE (Commercial Bank of Ethiopia):**
-   - **Account Name:** [Your Full Name Here]
-   - **Account Number:** [Your CBE Account Number Here]
+   - **Account Name:** Bisrat Tadesse
+   - **Account Number:** 1000539889102
 
 **2. Telebirr:**
-   - **Account Number:** [Your Telebirr Number Here]
+   - **Account Number:** +251930551468
 
 After you have made the payment, please send a screenshot of the transaction to this chat.
 
@@ -31,7 +30,7 @@ Once I confirm the payment, I will send you the private invitation link to the c
 Thank you!
 """
 
-# --- BOT LOGIC ---
+# --- BOT LOGIC (No need to edit below this line) ---
 def start(update, context):
     """Sends the welcome message when the /start command is issued."""
     update.message.reply_text(WELCOME_MESSAGE, parse_mode='Markdown')
@@ -46,16 +45,18 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
 
-    # Use the PORT environment variable Railway provides.
+    # Get the port from the environment variable Railway provides
     PORT = int(os.environ.get('PORT', '8443'))
 
-    # Start the Bot in webhook mode for hosting
+    # This line connects your bot to the Railway address
+    updater.bot.set_webhook(f"https://web-production-056b2.up.railway.app/{TELEGRAM_TOKEN}")
+
+    # This starts the bot listening for messages
     updater.start_webhook(listen="0.0.0.0",
                           port=PORT,
-                          url_path=TELEGRAM_TOKEN,
-                          webhook_url=f"https://https://web-production-056b2.up.railway.app//{TELEGRAM_TOKEN}")
-
-    print("Bot has started in webhook mode.")
+                          url_path=TELEGRAM_TOKEN)
+    
+    print("Bot has started and is listening for messages...")
     updater.idle()
 
 if __name__ == '__main__':
