@@ -1,4 +1,4 @@
-# --- AGORATUBE TELEGRAM BOT (FINAL VERSION) ---
+# --- AGORATUBE TELEGRAM BOT (CORRECTED FINAL VERSION) ---
 import os
 import telegram
 from telegram.ext import Updater, CommandHandler
@@ -47,16 +47,14 @@ def main():
 
     # Get the port from the environment variable Railway provides
     PORT = int(os.environ.get('PORT', '8443'))
-
-    # This line connects your bot to the Railway address
-    updater.bot.set_webhook(f"https://web-production-056b2.up.railway.app/{TELEGRAM_TOKEN}")
-
-    # This starts the bot listening for messages
+    
+    # This single command correctly starts the bot and sets the webhook with Telegram.
     updater.start_webhook(listen="0.0.0.0",
                           port=PORT,
-                          url_path=TELEGRAM_TOKEN)
+                          url_path=TELEGRAM_TOKEN,
+                          webhook_url=f"https://web-production-056b2.up.railway.app/{TELEGRAM_TOKEN}")
     
-    print("Bot has started and is listening for messages...")
+    print("Bot has started correctly in webhook mode.")
     updater.idle()
 
 if __name__ == '__main__':
