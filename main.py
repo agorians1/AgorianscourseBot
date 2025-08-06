@@ -1,4 +1,4 @@
-# --- AGORATUBE TELEGRAM BOT (FINAL STABLE VERSION V3) ---
+# --- AGORATUBE TELEGRAM BOT (FINAL, WITH RESPONSE LOGGING) ---
 import os
 import requests
 from flask import Flask, request
@@ -38,7 +38,6 @@ def respond():
     try:
         update = request.get_json()
 
-        # Check if the update contains a message
         if 'message' in update:
             message = update['message']
             chat_id = message['chat']['id']
@@ -47,11 +46,8 @@ def respond():
             # --- HANDLE PHOTOS ---
             if 'photo' in message:
                 print("--> Photo received. Preparing to forward.")
-                
-                # Get the file_id of the largest photo
                 photo_file_id = message['photo'][-1]['file_id']
                 
-                # Prepare the caption with user info
                 caption = f"New payment proof received!\n\n"
                 caption += f"From: {user.get('first_name', '')}"
                 if user.get('last_name'):
@@ -59,16 +55,17 @@ def respond():
                 if user.get('username'):
                     caption += f" (@{user.get('username')})"
                 
-                # Forward the photo to the admin
                 forward_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
                 forward_payload = {
                     'chat_id': ADMIN_CHAT_ID,
                     'photo': photo_file_id,
                     'caption': caption
                 }
-                requests.post(forward_url, json=forward_payload)
+                # Send the photo and get the response from Telegram
+                response = requests.post(forward_url, json=forward_payload)
+                # Print the response to the log for debugging
+                print(f"--> Telegram API response for forwarding: {response.json()}")
                 
-                # Send confirmation to the user
                 reply_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
                 reply_payload = {
                     'chat_id': chat_id,
@@ -79,10 +76,7 @@ def respond():
             # --- HANDLE TEXT MESSAGES ---
             elif 'text' in message:
                 text = message['text']
-                print(f"--> Text message received: {text}")
-                
                 if text == "/start":
-                    # Send the welcome message
                     reply_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
                     reply_payload = {
                         'chat_id': chat_id,
