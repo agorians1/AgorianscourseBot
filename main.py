@@ -1,11 +1,10 @@
-# --- AGORATUBE TELEGRAM BOT (FINAL STABLE VERSION) ---
+# --- AGORATUBE TELEGRAM BOT (FINAL DEBUGGING VERSION) ---
 import os
-import telegram
+import requests
 from flask import Flask, request
 
 # --- CONFIGURATION ---
-# The token is read from Railway's secret variables.
-# We are hardcoding it here because the variable system was not working.
+# The token is hardcoded here for our test.
 TELEGRAM_TOKEN = "8327178761:AAEwcqgJkZ7o3SIYQg9Raw3WXC6kQpYbdhU"
 
 WELCOME_MESSAGE = """
@@ -31,30 +30,47 @@ Once I confirm the payment, I will send you the private invitation link to the c
 Thank you!
 """
 
-# --- BOT & WEB SERVER SETUP (No need to edit) ---
-bot = telegram.Bot(token=TELEGRAM_TOKEN)
+# --- WEB SERVER SETUP (No need to edit) ---
 app = Flask(__name__)
 
 # This is the endpoint that Telegram sends messages to.
-# The webhook for this was set manually.
 @app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
 def respond():
-    # Retrieve the message in JSON and transform it to a Telegram object
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
+    print("--> Webhook received a request!")
+    try:
+        # Get the JSON data from Telegram
+        update = request.get_json()
+        print(f"--> Full update JSON: {update}")
 
-    # Get the chat ID and message text
-    chat_id = update.message.chat.id
-    text = update.message.text
+        # Extract chat_id and the message text
+        chat_id = update['message']['chat']['id']
+        text = update['message']['text']
+        print(f"--> Received message: '{text}' from chat_id: {chat_id}")
 
-    # Handle the /start command
-    if text == "/start":
-        bot.sendMessage(chat_id=chat_id, text=WELCOME_MESSAGE, parse_mode='Markdown')
-    
+        # If the message is /start, send the welcome message
+        if text == "/start":
+            print("--> '/start' command detected. Preparing to send reply.")
+            
+            # Use the 'requests' library to call the Telegram API directly
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+            payload = {
+                'chat_id': chat_id,
+                'text': WELCOME_MESSAGE,
+                'parse_mode': 'Markdown'
+            }
+            
+            # Send the message
+            response = requests.post(url, json=payload)
+            print(f"--> Telegram API response: {response.json()}")
+
+    except Exception as e:
+        # If any error happens, print it to the logs
+        print(f"--> An error occurred: {e}")
+
+    # Tell Telegram we received the message
     return 'ok'
 
 # A simple route to check if the server is running
 @app.route('/')
 def index():
     return 'Server is running!'
-
-# The app is run by Gunicorn from the Procfile, so the __main__ block is not needed for Railway.
