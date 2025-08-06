@@ -1,12 +1,10 @@
-# --- AGORATUBE TELEGRAM BOT (CORRECTED FINAL VERSION) ---
+# --- AGORATUBE TELEGRAM BOT (STABLE FLASK VERSION) ---
 import os
 import telegram
-from telegram.ext import Updater, CommandHandler
+from flask import Flask, request
 
 # --- CONFIGURATION ---
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
-
-# This is the message the bot will send with your payment details.
 WELCOME_MESSAGE = """
 Hello! Welcome to the AgoraTube AI Website Course.
 
@@ -30,32 +28,33 @@ Once I confirm the payment, I will send you the private invitation link to the c
 Thank you!
 """
 
-# --- BOT LOGIC (No need to edit below this line) ---
-def start(update, context):
-    """Sends the welcome message when the /start command is issued."""
-    update.message.reply_text(WELCOME_MESSAGE, parse_mode='Markdown')
+# --- BOT & WEB SERVER SETUP (No need to edit) ---
+bot = telegram.Bot(token=TELEGRAM_TOKEN)
+app = Flask(__name__)
 
-def main():
-    """Start the bot."""
-    if not TELEGRAM_TOKEN:
-        print("ERROR: TELEGRAM_TOKEN environment variable not set!")
-        return
+# This is the endpoint that Telegram sends messages to
+@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
+def respond():
+    # Retrieve the message in JSON and transform it to a Telegram object
+    update = telegram.Update.de_json(request.get_json(force=True), bot)
 
-    updater = Updater(TELEGRAM_TOKEN, use_context=True)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
+    # Get the chat ID and message text
+    chat_id = update.message.chat.id
+    msg_id = update.message.message_id
+    text = update.message.text.encode('utf-8').decode()
 
-    # Get the port from the environment variable Railway provides
-    PORT = int(os.environ.get('PORT', '8443'))
+    # Handle the /start command
+    if text == "/start":
+        bot.sendMessage(chat_id=chat_id, text=WELCOME_MESSAGE, parse_mode='Markdown')
     
-    # This single command correctly starts the bot and sets the webhook with Telegram.
-    updater.start_webhook(listen="0.0.0.0",
-                          port=PORT,
-                          url_path=TELEGRAM_TOKEN,
-                          webhook_url=f"https://web-production-056b2.up.railway.app/{TELEGRAM_TOKEN}")
-    
-    print("Bot has started correctly in webhook mode.")
-    updater.idle()
+    return 'ok'
+
+# A simple route to check if the server is running
+@app.route('/')
+def index():
+    return 'Server is running!'
 
 if __name__ == '__main__':
-    main()
+    # The app is run by Gunicorn from the Procfile, so this part is not used on Railway
+    # but is useful for local testing if needed.
+    app.run(threaded=True)
